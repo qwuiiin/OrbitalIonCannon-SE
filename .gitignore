@@ -1,11 +1,6 @@
-﻿/.vs
-/.build
-/*.zip
 *.zip
-/Kux-*
-src/settings.lua.bak
 *.bak
-*/.vscode
-*.cmd
-*.lnk
 *.db
+*.lnk
+/.vs
+/.build

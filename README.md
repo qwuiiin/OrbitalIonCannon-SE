@@ -1,23 +1,23 @@
-# Orbital Ion Cannon
-A Factorio Mod
+# Orbital Ion Cannon — Space Exploration Edition
 
-Based on [Supercheese's Orbital Ion Cannon](https://mods.factorio.com/mod/Orbital%20Ion%20Cannon)
+A Factorio 2.0 mod. Fork of [kuxynator's Kux-OrbitalIonCannon](https://github.com/kuxynator/Kux-OrbitalIonCannon), originally based on [Supercheese's Orbital Ion Cannon](https://mods.factorio.com/mod/Orbital%20Ion%20Cannon).
 
-Feel free to add you ideas and contribute to this repository.
+Adds full [Space Exploration](https://mods.factorio.com/mod/space-exploration) 0.7 compatibility to the Orbital Ion Cannon mod.
 
-### Files to change for each release
-- changelog.txt
-- [Version](###Versionscheme) in info_1.0.json AND info_1.1.json
+### SE Features
+- Zone-aware surface resolution (orbit -> parent planet, moons)
+- SE cargo rocket launch pad support
+- Per-surface cannon tracking and GUI display
+- Cannon surface name migration on configuration change
 
-### Version scheme
-X.Y.Z\
-X = Factorio Version (1 = 1.0, 2= 1.1, ...)\
-Y = Feature version (increment on each new feature)\
-Z = Patch version (increment on each bugfix or small changes)\
+### Dependencies
+- Factorio >= 2.0
+- [Kux-CoreLib](https://mods.factorio.com/mod/Kux-CoreLib) >= 3.17.7
+- [Kux-GuiLib](https://mods.factorio.com/mod/Kux-GuiLib) >= 3.0.9
 
-### Contact
-- [Mod Portal](https://mods.factorio.com/mod/Kux-Kux-OrbitalIonCannon/discussion)
-- [Discord](https://discord.gg/BWUTaJy)
-- [Facebook](https://www.facebook.com/Kuxynator.Factorio)
-- [GitHub](https://github.com/kuxynator/Kux-Kux-OrbitalIonCannon)
-- [Patreon](https://www.patreon.com/kuxynator)
+### Installation
+Copy the contents of `src/` into your Factorio mods folder as `OrbitalIonCannon-SE_<version>/`.
+
+### Credits
+- [Supercheese](https://github.com/Suprcheese/Orbital-Ion-Cannon) — original mod
+- [kuxynator](https://github.com/kuxynator/Kux-OrbitalIonCannon) — Factorio 2.0 port
