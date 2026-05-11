@@ -1,7 +1,7 @@
 KuxCoreLib = require("__Kux-CoreLib__/lib/init") --[[@as KuxCoreLib]]
 KuxGuiLib = require("__Kux-GuiLib__/lib/init") --[[@as KuxGuiLib]]
 
----@class Mod : KuxCoreLib.ModInfo Mod Kux-OrbitalIonCannon
+---@class Mod : KuxCoreLib.ModInfo Mod OrbitalIonCannon-SE
 local mod = KuxCoreLib.ModInfo.new{separator="-"}
 
 --- all registered modules

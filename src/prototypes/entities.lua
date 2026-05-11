@@ -387,16 +387,16 @@ yuge_crater.animation = {
 	filename = "__base__/graphics/entity/scorchmark/big-scorchmark.png"
 }
 
-yuge_crater.animation.filename = "__Kux-OrbitalIonCannon__/graphics/yuge-scorchmark.png"
+yuge_crater.animation.filename = "__OrbitalIonCannon-SE__/graphics/yuge-scorchmark.png"
 yuge_crater.animation.width=yuge_crater.animation.width*4
 yuge_crater.animation.height=yuge_crater.animation.height*4
 ]]
 
-yuge_crater.ground_patch.sheet.filename = "__Kux-OrbitalIonCannon__/graphics/yuge-scorchmark.png"
+yuge_crater.ground_patch.sheet.filename = "__OrbitalIonCannon-SE__/graphics/yuge-scorchmark.png"
 yuge_crater.ground_patch.sheet.width=yuge_crater.ground_patch.sheet.width*4
 yuge_crater.ground_patch.sheet.height=yuge_crater.ground_patch.sheet.height*4
 
-yuge_crater.ground_patch_higher.sheet.filename = "__Kux-OrbitalIonCannon__/graphics/yuge-scorchmark-top.png"
+yuge_crater.ground_patch_higher.sheet.filename = "__OrbitalIonCannon-SE__/graphics/yuge-scorchmark-top.png"
 yuge_crater.ground_patch_higher.sheet.width=yuge_crater.ground_patch_higher.sheet.width*4
 yuge_crater.ground_patch_higher.sheet.height=yuge_crater.ground_patch_higher.sheet.height*4
 

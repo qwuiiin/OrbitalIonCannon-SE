@@ -1,10 +1,10 @@
 {
-	"name": "Kux-OrbitalIonCannon",
+	"name": "OrbitalIonCannon-SE",
 	"version": "2.4.1",
 	"factorio_version": "1.1",
-	"title": "Orbital Ion Cannon (SE Edition)",
-	"author": "kuxynator",
-	"homepage": "",
+	"title": "Orbital Ion Cannon (Space Exploration Edition)",
+	"author": "qwuiiin",
+	"homepage": "https://github.com/qwuiiin/OrbitalIonCannon-SE",
 	"dependencies": [
 		"base",
 		"Kux-CoreLib >= 2.4.1",
