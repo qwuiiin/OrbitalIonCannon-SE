@@ -19,5 +19,5 @@
 			"(?) Krastorio2",
 		"! Orbital Ion Cannon"
 	],
-	"description": "When you need to call down the thunder to deal with those pesky biters, launch a rocket with an ion cannon into orbit and show the bugs who's boss.\r\nRepublishing Supercheese's Orbital Ion Cannon 1.8.2\r\nOriginal Homepage: http://www.factorioforums.com/forum/viewtopic.php?f=93&t=17910"
+	"description": "Fork of Kux-OrbitalIonCannon with full Space Exploration 0.7 compatibility. Launch ion cannons via vanilla rocket silos or SE cargo rockets. Cannons are tracked per-planet — fire from orbit of the planet you're on. Supports SE zones (planets, moons, orbits) and Space Age platforms.\nBased on Supercheese's Orbital Ion Cannon and kuxynator's Factorio 2.0 port."
 }
