@@ -111,15 +111,20 @@ end
 ---@param surface string|LuaSurface
 ---@return number
 ---@nodiscard
-function IonCannonStorage.countIonCannonsReady(force, surface) -- TODO check all callers
-	local surfaceName = nil
-	if type(surface) == "string" then surfaceName = surface else surfaceName = surface.name end
-
+function IonCannonStorage.countIonCannonsReady(force, surface)
+	local planetName
+	if IonCannon and IonCannon.resolvePlanetName then
+		planetName = IonCannon.resolvePlanetName(surface)
+	elseif type(surface) == "string" then
+		planetName = surface
+	else
+		planetName = surface.name
+	end
 	local cannons = IonCannonStorage.fromForce(force)
 	if not cannons then return 0 end
 	local ionCannonsReady = 0
 	for i, cooldown in pairs(cannons) do
-		if cooldown[2] == 1 and cooldown[3] == surfaceName then
+		if cooldown[2] == 1 and cooldown[3] == planetName then
 			ionCannonsReady = ionCannonsReady + 1
 		end
 	end

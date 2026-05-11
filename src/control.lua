@@ -36,24 +36,32 @@ setmetatable(this, {__index = Control})
 _G.when_ion_cannon_targeted = nil
 
 
+function this.register_se_events_init()
+	if remote.interfaces["space-exploration"] then
+		local se_rocket_event = remote.call("space-exploration", "get_on_cargo_rocket_launched_event")
+		if se_rocket_event then
+			storage.se_cargo_rocket_event_id = se_rocket_event
+			Events.on_event(se_rocket_event, this.on_se_cargo_rocket_launched)
+		end
+	end
+end
+
+function this.register_se_events_load()
+	if storage.se_cargo_rocket_event_id then
+		Events.on_event(storage.se_cargo_rocket_event_id, this.on_se_cargo_rocket_launched)
+	end
+end
+
 function this.initialize()
 	fLog("initialize")
-	-- on_init, on_configuration_changed, on_force_created
 	Interface.generateEvents()
 	IonCannonStorage.initialize()
 
 	storage.goToFull = storage.goToFull or {}
 	storage.markers = storage.markers or {}
-	--global.holding_targeter = global.holding_targeter or {} --MAV This doesn't do anything that makes sense, getting rid of it. If necessary can be replaced with isHolding()
 	storage.klaxonTick = storage.klaxonTick or 0
 	storage.auto_tick = storage.auto_tick or 0
 	storage.readyTick = {}
---	if remote.interfaces["silo_script"] then
---		local tracked_items = remote.call("silo_script", "get_tracked_items") --COMPATIBILITY 1.1 get_tracked_items removed
---		if not tracked_items["orbital-ion-cannon"] then
---			remote.call("silo_script", "add_tracked_item", "orbital-ion-cannon") --COMPATIBILITY 1.1 add_tracked_item removed
---		end
---	end
 	if not storage.permissions then Permissions.initialize() end
 	for _, player in pairs(game.players) do
 		storage.readyTick[player.index] = 0
@@ -70,6 +78,25 @@ function this.initialize()
 		storage.IonCannonLaunched = true
 		this.enableNthTick60()
 	end
+	this.migrate_cannon_surface_names()
+	this.register_se_events_init()
+end
+
+function this.migrate_cannon_surface_names()
+	if not mods["space-exploration"] then return end
+	if not remote.interfaces["space-exploration"] then return end
+	for _, cannons in pairs(storage.forces_ion_cannon_table) do
+		if type(cannons) == "table" then
+			for _, cannon in ipairs(cannons) do
+				if cannon[3] then
+					local resolved = IonCannon.resolvePlanetName(cannon[3])
+					if resolved ~= cannon[3] then
+						cannon[3] = resolved
+					end
+				end
+			end
+		end
+	end
 end
 
 function this.onLoad()
@@ -78,6 +105,7 @@ function this.onLoad()
 	if storage.IonCannonLaunched then
 		this.enableNthTick60()
 	end
+	this.register_se_events_load()
 end
 
 function this.on_force_created(e)
@@ -152,40 +180,55 @@ function isHolding(stack, player)
 	return false
 end
 
---- Called when the rocket is launched.
 ---@param e EventData.on_rocket_launched
--- rocket :: LuaEntity
--- rocket_silo :: LuaEntity (optional)
--- player_index :: uint (optional): The player that is riding the rocket, if any.
 function this.on_rocket_launched(e)
-	--TODO: run only only if space_travel is false
-	print("on_rocket_launched")
-	local force = e.rocket.force
+	local rocket = e.rocket
+	if not (rocket and rocket.valid) then return end
+	local force = rocket.force
 
-	-- no valid inventories for the rocket!
-	-- for inventory_name, inventory_key in pairs(defines.inventory) do ..
+	local cargo_pod = rocket.attached_cargo_pod or rocket.cargo_pod
+	if not (cargo_pod and cargo_pod.valid) then return end
 
-	--[[
-	for inventory_name, inventory_key in pairs(defines.inventory) do
-		inv = e.rocket_silo.get_inventory(inventory_key)
-		if inv then
-			print("inventory["..tostring(inventory_name).."]")
-			for i=1,#inv do
-				print("  item["..tostring(i).."] = "..tostring(inv[i]))
-			end
+	local inv = cargo_pod.get_inventory(defines.inventory.cargo_unit)
+	if not inv then return end
+
+	local ion_count = 0
+	for _, item in pairs(inv.get_contents()) do
+		if item.name == "orbital-ion-cannon" then
+			ion_count = item.count
+			break
 		end
 	end
-	]]
 
-	if e.rocket.cargo_pod and e.rocket.cargo_pod.get_item_count("orbital-ion-cannon") > 0 then
-		-- only vanilla (with space-age activated cargo_pod is nil)
-		print("ion-cannon-targeter found in rocket")
-		IonCannon.install(force, e.rocket_silo.surface)
-		local inv = e.rocket.cargo_pod.get_inventory(defines.inventory.cargo_unit)
-		inv.remove({name = "orbital-ion-cannon", count = 1})
-		return
+	if ion_count > 0 then
+		local surface = e.rocket_silo and e.rocket_silo.surface or rocket.surface
+		for i = 1, ion_count do
+			IonCannon.install(force, surface)
+		end
+		inv.remove({name = "orbital-ion-cannon", count = ion_count})
 	end
+end
 
+---SE cargo rocket launched event handler
+function this.on_se_cargo_rocket_launched(e)
+	if not e.launched_contents then return end
+	local ion_count = 0
+	for _, item in pairs(e.launched_contents) do
+		if item.name == "orbital-ion-cannon" then
+			ion_count = (item.count or 1)
+		end
+	end
+	if ion_count == 0 then return end
+
+	local dest_zone_name = e.destination_zone_name
+	if not dest_zone_name then return end
+	local force = game.forces[e.force_name]
+	if not force then return end
+
+	local planetName = IonCannon.resolvePlanetName(dest_zone_name)
+	for i = 1, ion_count do
+		IonCannon.install(force, planetName)
+	end
 end
 
 --- @param e EventData.on_pre_build
@@ -207,6 +250,7 @@ end
 --- @param e EventData.on_built_entity
 function this.on_built_entity(e)
 	local entity = e.entity
+	if not entity.valid then return end
 	local targeter_names ={"ion-cannon-targeter", "ion-cannon-targeter-mk2"}
 	for _, targeter_name in ipairs(targeter_names) do
 		if entity.name == targeter_name then

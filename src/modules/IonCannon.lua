@@ -9,15 +9,55 @@ local this = setmetatable({}, {__index = IonCannon})
 
 -----------------------------------------------------------------------------------------------------------------------
 
+---Resolves a surface (planet, orbit, or space platform) to the planet/moon name
+---that cannons should be stored against. Works with SE zones and SA platforms.
+---@param surface LuaSurfaceId
+---@return string
+function IonCannon.resolvePlanetName(surface)
+	if type(surface) == "string" then
+		return IonCannon._resolvePlanetNameFromString(surface)
+	end
+	surface = getSurface(surface)
+	if mods["space-exploration"] and remote.interfaces["space-exploration"] then
+		local zone = remote.call("space-exploration", "get_zone_from_surface_index", {surface_index = surface.index})
+		if zone then
+			if zone.type == "orbit" and zone.parent_index then
+				local parent = remote.call("space-exploration", "get_zone_from_zone_index", {zone_index = zone.parent_index})
+				if parent and parent.name then return parent.name end
+			end
+			if zone.type == "planet" or zone.type == "moon" then
+				return zone.name
+			end
+		end
+	end
+	if surface.platform and surface.platform.space_location and surface.platform.space_location.type == "planet" then
+		return surface.platform.space_location.name
+	end
+	return surface.name
+end
+
+---@param name string
+---@return string
+function IonCannon._resolvePlanetNameFromString(name)
+	if mods["space-exploration"] then
+		local suffix = " Orbit"
+		if #name > #suffix and string.sub(name, -#suffix) == suffix then
+			return string.sub(name, 1, #name - #suffix)
+		end
+	end
+	local s = game.surfaces[name]
+	if s then return IonCannon.resolvePlanetName(s) end
+	return name
+end
+
+---Backward-compatible wrapper: returns the resolved LuaSurface for a given surface.
 ---@param surface LuaSurfaceId
 ---@return LuaSurface
 function IonCannon.getOrbitingSurface(surface)
-	surface = getSurface(surface)
-	if surface.platform and surface.platform.space_location and surface.platform.space_location.type=="planet" then
-		local s = game.surfaces[surface.platform.space_location.name]
-		if s and s.valid then surface = s end
-	end
-	return surface
+	local planetName = IonCannon.resolvePlanetName(surface)
+	local s = game.surfaces[planetName]
+	if s and s.valid then return s end
+	return getSurface(surface)
 end
 
 --Reduce cannon cooldowns. Time parameter is optional, defaults to 1
@@ -47,10 +87,10 @@ end
 ---@param surface LuaSurfaceId
 ---@return integer
 function IonCannon.countReady(force, surface)
-	surfaceName = this.getOrbitingSurface(surface).name
+	local planetName = IonCannon.resolvePlanetName(surface)
 	local count = 0
 	for i, cannon in pairs(IonCannonStorage.fromForce(force)) do
-		if cannon[3]==surfaceName and cannon[2] == 1 then count = count + 1 end
+		if cannon[3] == planetName and cannon[2] == 1 then count = count + 1 end
 	end
 	return count
 end
@@ -68,30 +108,16 @@ function IonCannon.isIonCannonReady(force)
 	return found
 end
 
---Given a surface, counts the number of orbiting ion cannons. If the surface is an orbit, it counts the number of cannons attached to the associated planet instead
 ---@param force LuaForceId
 ---@param surface LuaSurfaceId
 ---@return integer
 function IonCannon.countOrbitingIonCannons(force, surface)
-	surface = getSurface(surface)
-	local surfaceName = surface.name
-
-	if mods["space-exploration"] then
-		local suffix=" Orbit"
-		if #surfaceName > #suffix and string.sub(surfaceName, -#suffix) == suffix then
-			local sn = string.sub(surfaceName, 1, #surfaceName-#suffix)
-			if game.surfaces[surfaceName] then surfaceName = sn end
-			surfaceName = sn
-		end
-	end
-
-	surfaceName = this.getOrbitingSurface(surfaceName).name
-
+	local planetName = IonCannon.resolvePlanetName(surface)
 	local total = 0
 	local cannons = IonCannonStorage.fromForce(force)
 	if not cannons then return 0 end
 	for i = 1, #cannons do
-		if surfaceName == cannons[i][3] then
+		if planetName == cannons[i][3] then
 			total = total + 1
 		end
 	end
@@ -101,39 +127,27 @@ end
 ---@param force integer|string|LuaForce
 ---@param surface string|LuaSurface
 ---@return number
-function IonCannon.timeUntilNextReady(force, surface) -- TODO check all callers
-	local surfaceName = nil
-	if type(surface) == "string" then surfaceName = surface else surfaceName = surface.name end
-
+function IonCannon.timeUntilNextReady(force, surface)
+	local planetName = IonCannon.resolvePlanetName(surface)
 	local shortestCooldown = settings.global["ion-cannon-cooldown-seconds"].value --[[@as number]]
 	local cannons = IonCannonStorage.fromForce(force)
 	if not cannons then return shortestCooldown end
 	for i, cooldown in pairs(cannons) do
-		if cooldown[1] < shortestCooldown and cooldown[2] == 0 and cooldown[3] == surfaceName then
+		if cooldown[1] < shortestCooldown and cooldown[2] == 0 and cooldown[3] == planetName then
 			shortestCooldown = cooldown[1]
 		end
 	end
 	return shortestCooldown
 end
 
---Adds an ion cannon. Ensures Ion cannons aren't added in orbit.
---Returns the name of the surface the cannon was added to.
 ---@param force integer|string|LuaForce
 ---@param surface string|LuaSurface
 ---@return string
 function IonCannon.add(force, surface)
-	local surfaceName = getSurfaceName(surface)
-	if(mods["space-exploration"]) then -- "Nauvis Orbit" => "Nauvis"
-		local suffix=" Orbit"
-		if #surfaceName > #suffix and string.sub(surfaceName, -#suffix) == suffix then
-			local sn = string.sub(surfaceName, 1, #surfaceName-#suffix)
-			if game.surfaces[surfaceName] then surfaceName = sn end
-			surfaceName = sn
-		end
-	end
-	table.insert(IonCannonStorage.fromForce(force), {settings.global["ion-cannon-cooldown-seconds"].value, 0, surfaceName})
+	local planetName = IonCannon.resolvePlanetName(surface)
+	table.insert(IonCannonStorage.fromForce(force), {settings.global["ion-cannon-cooldown-seconds"].value, 0, planetName})
 	storage.IonCannonLaunched = true
-	return surfaceName
+	return planetName
 end
 
 --Removes an ion cannon.
@@ -152,9 +166,10 @@ end
 function IonCannon.target(force, position, surface, player)
 	local cannonNum = 0
 	local targeterName = "Auto"
+	local planetName = IonCannon.resolvePlanetName(surface)
 
 	for i, cannon in pairs(IonCannonStorage.fromForce(force)) do
-		if cannon[2] == 1 and cannon[3] == surface.name then
+		if cannon[2] == 1 and cannon[3] == planetName then
 			cannonNum = i
 			break
 		end

@@ -124,9 +124,10 @@ function this.on_gui_click(e)
 		return
 	elseif name == "remove-ion-cannon" then
 		local cannons = IonCannonStorage.fromForce(force) or {}
-		for _, cannon in ipairs(cannons) do
-			if cannon[3] == player.surface.name then
-				table.remove(cannons)
+		local planetName = IonCannon.resolvePlanetName(player.surface)
+		for idx, cannon in ipairs(cannons) do
+			if cannon[3] == planetName then
+				table.remove(cannons, idx)
 				for i, player in pairs(force.connected_players) do update_GUI(player) end
 				force.print({"ion-cannon-removed"})
 				return
@@ -218,7 +219,7 @@ function open_GUI(player)
 	local frame = player.gui.left["ion-cannon-stats"]
 	local force = player.force
 	local forceName = force.name
-	local surfaceName = IonCannon.getOrbitingSurface(player.surface).name
+	local surfaceName = IonCannon.resolvePlanetName(player.surface)
 	local player_index = player.index
 	if frame and storage.goToFull[player_index] then frame.destroy() return end
 
@@ -266,9 +267,9 @@ function open_GUI(player)
 			frame["ion-cannon-admin-panel-header"].add{type = "checkbox", state = storage.permissions[-2], name = "ion-cannon-auto-target-enabled"}
 		end
 		frame.add{type = "table", column_count = 1, name = "ion-cannon-table"}
-		frame["ion-cannon-table"].add{type = "label", caption = {"ion-cannons-in-orbit", surfaceName, IonCannonStorage.count(force)}}
+		frame["ion-cannon-table"].add{type = "label", caption = {"ion-cannons-in-orbit", surfaceName, IonCannon.countOrbitingIonCannons(force, surfaceName)}}
 		frame["ion-cannon-table"].add{type = "label", caption = {"ion-cannons-ready", IonCannonStorage.countIonCannonsReady(force, surfaceName)}}
-		if IonCannonStorage.countIonCannonsReady(force, surfaceName) < IonCannonStorage.count(force) then
+		if IonCannonStorage.countIonCannonsReady(force, surfaceName) < IonCannon.countOrbitingIonCannons(force, surfaceName) then
 			frame["ion-cannon-table"].add{type = "label", caption = {"time-until-next-ready", IonCannon.timeUntilNextReady(force, surfaceName)}}
 		end
 	end
@@ -285,7 +286,7 @@ function update_GUI(player)
 	local force = player.force
 	--local forceName = force.name
 	local playerIndex = player.index
-	local surfaceName = IonCannon.getOrbitingSurface(player.surface).name
+	local surfaceName = IonCannon.resolvePlanetName(player.surface)
 
 	if button then
 		local numReadyCannons = IonCannon.countReady(force, surfaceName)
@@ -318,14 +319,7 @@ function update_GUI(player)
 	else
 		cannonTable = statsFrame.add{type = "table", column_count = 1, name = "ion-cannon-table"}
 		--cannonTable.add{type = "label", caption = {"ion-cannons-in-orbit", #GetCannonTableFromForce(force)}}
-		local numCannons = 0
-		if false then
-			numCannons =  IonCannonStorage.count(force)
-		else
-			for i = 1, IonCannonStorage.count(force) do
-				if surfaceName == IonCannonStorage.fromForce(force)[i][3] then numCannons=numCannons+1 end
-			end
-		end
+		local numCannons = IonCannon.countOrbitingIonCannons(force, player.surface)
 
 		cannonTable.add{type = "label", caption = {"ion-cannons-in-orbit", surfaceName, numCannons}}
 		cannonTable.add{type = "label", caption = {"ion-cannons-ready", IonCannonStorage.countIonCannonsReady(force, surfaceName)}}
@@ -341,7 +335,7 @@ function createFullCannonTableFiltered(player)
 	local force = player.force
 	local cannonTable = statsFrame.add{type = "table", column_count = 2, name = "ion-cannon-table"}
 	local cannons = IonCannonStorage.fromForce(force)
-	local surfaceName = IonCannon.getOrbitingSurface(player.surface).name
+	local surfaceName = IonCannon.resolvePlanetName(player.surface)
 
 	for i = 1, #cannons do
 		if surfaceName == cannons[i][3] then
